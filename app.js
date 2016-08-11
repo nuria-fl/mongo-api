@@ -78,6 +78,33 @@ mongo.connect(url, function(err, db) {
 
 	});
 
+	var a = ['/restaurants/cuisine/:cuisine', '/restaurants/cuisine/not/:cuisine'];
+	app.get(a, function(req,res) {
+		
+		console.log("Connected");
+
+		var collection = db.collection('restaurants');
+
+		var cuisine = req.params.cuisine;
+
+		var oFilter = filter(req);
+		var limit = limitItems(req);
+		var page = pagination(req);
+
+		var path = req.path.split('/');
+
+		if(path[3]==='not'){
+			cuisine = {$ne: cuisine}
+		}
+		
+		collection.find({cuisine: cuisine}, oFilter).skip(page).limit(limit).toArray(function(err, docs) {
+			if (err) throw new Error("oops");
+			res.json(docs);
+			
+		});
+
+	});
+
 
 });
 
