@@ -4,6 +4,43 @@ var app = express();
 
 var url = 'mongodb://localhost:27017/test';
 
+function limitItems(req){
+	var lim = 0;
+
+	if (req.query.limit) {
+		lim = req.query.limit;
+	}
+
+	return parseInt(lim);
+}
+function pagination(req){
+
+	var itemsToSkip = 0;
+	if (req.query.page) {
+		var page = req.query.page - 1;
+		itemsToSkip = req.query.limit * page;
+	}
+	
+	return parseInt(itemsToSkip);
+}
+function filter(req){
+	var oFilter = {};
+
+	if (req.query.show) {
+		var toShow = req.query.show.split(',');
+		toShow.forEach(function(elem){
+			oFilter[elem] = 1;
+		});
+	}			
+	if(req.query.hide){
+		var toHide = req.query.hide.split(',');	
+		toHide.forEach(function(elem){
+			oFilter[elem] = 0;
+		});
+	}
+	return oFilter;
+}
+
 mongo.connect(url, function(err, db) {
 	if (err) throw new Error("oops");
 
@@ -11,34 +48,15 @@ mongo.connect(url, function(err, db) {
 		console.log("Connected");
 		var collection = db.collection('restaurants');
 
-		if(Object.keys(req.query).length === 0){
-
-			collection.find({}).toArray(function(err, docs) {
-				if (err) throw new Error("oops");
-				res.json(docs);
-			});
-			
-		} else {
-
-			var newObj = {};
-
-			if (req.query.show) {
-				var toShow = req.query.show.split(',');
-				toShow.forEach(function(elem){
-					newObj[elem] = 1;
-				});
-			}			
-			if(req.query.hide){
-				var toHide = req.query.hide.split(',');	
-				toHide.forEach(function(elem){
-					newObj[elem] = 0;
-				});
-			}
-			collection.find({}, newObj).toArray(function(err, docs) {
-				if (err) throw new Error("oops");
-				res.json(docs);
-			});
-		}
+		var oFilter = filter(req);
+		var limit = limitItems(req);
+		var page = pagination(req);
+		// var limitItems = limitItems(req);
+		
+		collection.find({},oFilter).limit(limit).skip(page).toArray(function(err, docs) {
+			if (err) throw new Error("oops");
+			res.json(docs);
+		});
 	});
 
 	app.get('/restaurants/borough/:borough', function(req,res) {
@@ -48,7 +66,11 @@ mongo.connect(url, function(err, db) {
 
 		var borough = req.params.borough;
 
-		collection.find({borough: borough}).toArray(function(err, docs) {
+		var oFilter = filter(req);
+		var limit = limitItems(req);
+		var page = pagination(req);
+
+		collection.find({borough: borough}, oFilter).skip(page).limit(limit).toArray(function(err, docs) {
 			if (err) throw new Error("oops");
 			res.json(docs);
 			
@@ -59,4 +81,4 @@ mongo.connect(url, function(err, db) {
 
 });
 
-app.listen(3000)
+app.listen(3000);
