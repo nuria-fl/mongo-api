@@ -1,6 +1,7 @@
 var express = require('express');
 var mongo = require('mongodb').MongoClient;
 var app = express();
+var ObjectID = require('mongodb').ObjectId;
 
 var url = 'mongodb://localhost:27017/test';
 
@@ -94,7 +95,7 @@ mongo.connect(url, function(err, db) {
 		var path = req.path.split('/');
 
 		if(path[3]==='not'){
-			cuisine = {$ne: cuisine}
+			cuisine = {$ne: cuisine};
 		}
 		
 		collection.find({cuisine: cuisine}, oFilter).skip(page).limit(limit).toArray(function(err, docs) {
@@ -104,6 +105,24 @@ mongo.connect(url, function(err, db) {
 		});
 
 	});
+
+	app.get('/restaurant/:id', function(req, res){
+		console.log("Connected");
+
+		var collection = db.collection('restaurants');
+
+		var oFilter = filter(req);
+		var limit = limitItems(req);
+		var page = pagination(req);
+		
+		var id = req.params.id;
+
+		collection.find({_id: ObjectID(id)}, oFilter).skip(page).limit(limit).toArray(function(err, docs) {
+			if (err) throw new Error("oops");
+			res.json(docs);
+			
+		});
+	})
 
 
 });
