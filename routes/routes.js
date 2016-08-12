@@ -1,6 +1,6 @@
 var express = require('express');
 var router = express.Router();
-
+var ObjectID = require('mongodb').ObjectId;
 var limitItems = require('../helpers/limitItems');
 var pagination = require('../helpers/pagination');
 var filter = require('../helpers/filter');
@@ -101,7 +101,7 @@ function routes(db) {
 		var latitude = 0;
 		
 		collection.ensureIndex({ "address.coord":"2dsphere"}); 
-
+		
 		collection.find({_id: ObjectID(id)}).limit(1).toArray(function(err, docs) {
 			if (err) throw new Error("oops");
 			longitude = docs[0].address.coord[0];
