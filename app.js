@@ -3,47 +3,15 @@ var mongo = require('mongodb').MongoClient;
 var app = express();
 var ObjectID = require('mongodb').ObjectId;
 
+var limitItems = require('./helpers/limitItems');
+var pagination = require('./helpers/pagination');
+var filter = require('./helpers/filter');
+
 var url = 'mongodb://localhost:27017/test';
 
-function limitItems(req){
-	var lim = 0;
+var db = mongo.connect(url)
 
-	if (req.query.limit) {
-		lim = req.query.limit;
-	}
-
-	return parseInt(lim);
-}
-function pagination(req){
-
-	var itemsToSkip = 0;
-	if (req.query.page) {
-		var page = req.query.page - 1;
-		itemsToSkip = req.query.limit * page;
-	}
-	
-	return parseInt(itemsToSkip);
-}
-function filter(req){
-	var oFilter = {};
-
-	if (req.query.show) {
-		var toShow = req.query.show.split(',');
-		toShow.forEach(function(elem){
-			oFilter[elem] = 1;
-		});
-	}			
-	if(req.query.hide){
-		var toHide = req.query.hide.split(',');	
-		toHide.forEach(function(elem){
-			oFilter[elem] = 0;
-		});
-	}
-	return oFilter;
-}
-
-mongo.connect(url, function(err, db) {
-	if (err) throw new Error("oops");
+db.then(function(db){
 
 	app.get('/restaurants', function(req,res) {
 		console.log("Connected");
@@ -52,7 +20,6 @@ mongo.connect(url, function(err, db) {
 		var oFilter = filter(req);
 		var limit = limitItems(req);
 		var page = pagination(req);
-		// var limitItems = limitItems(req);
 		
 		collection.find({},oFilter).limit(limit).skip(page).toArray(function(err, docs) {
 			if (err) throw new Error("oops");
@@ -165,6 +132,11 @@ mongo.connect(url, function(err, db) {
 		});
 	});
 
-});
+	app.listen(3000, function() {
+		console.log ("listening to port 3000");
+	})
 
-app.listen(3000);
+})
+.catch(function(err) {
+	throw new Error("something failed in the connection");
+})
