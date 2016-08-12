@@ -101,9 +101,10 @@ function routes(db) {
 		var latitude = 0;
 		
 		collection.ensureIndex({ "address.coord":"2dsphere"}); 
-		
-		collection.find({_id: ObjectID(id)}).limit(1).toArray(function(err, docs) {
-			if (err) throw new Error("oops");
+
+		var findRestaurantById = collection.find({_id: ObjectID(id)}).limit(1).toArray();
+
+		findRestaurantById.then(function(docs){
 			longitude = docs[0].address.coord[0];
 			latitude = docs[0].address.coord[1];
 			
@@ -123,6 +124,9 @@ function routes(db) {
 				res.json(docs);
 				
 			});
+		})
+		.catch(function(err) {
+			throw new Error("oops");
 		});
 	});
 
